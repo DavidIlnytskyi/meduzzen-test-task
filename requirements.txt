@@ -1,0 +1,12 @@
+#inference-gpu
+inference
+supervision
+rfdetr
+numpy
+opencv-python
+pillow
+torch
+torchvision
+huggingface_hub
+kernels
+tqdm

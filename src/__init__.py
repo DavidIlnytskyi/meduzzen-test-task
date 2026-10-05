@@ -1,0 +1,1 @@
+"""Football ball tracking pipeline."""
