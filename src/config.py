@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Config:
+    """Hold detector, tracker, and homography settings."""
+
     target_class_id: int = 0
     detector_threshold: float = 0.15
     nms_threshold: float = 0.5

@@ -5,6 +5,8 @@ import supervision as sv
 
 
 class BallTracker:
+    """Track a ball across frames and confirm recovered detections."""
+
     def __init__(
         self,
         base_distance: float,
@@ -15,7 +17,8 @@ class BallTracker:
         reacquire_frames: int,
         reacquire_distance: float,
         velocity_smoothing: float,
-    ):
+    ) -> None:
+        """Configure the motion gate and recovery thresholds."""
         self.base_distance = base_distance
         self.max_distance = max_distance
         self.velocity_factor = velocity_factor
@@ -27,15 +30,16 @@ class BallTracker:
 
         self.velocity_smoothing = velocity_smoothing
 
-        self.position = None
+        self.position: np.ndarray | None = None
         self.velocity = np.zeros(2, dtype=np.float32)
 
         self.missed_frames = 0
 
-        self.candidate_position = None
+        self.candidate_position: np.ndarray | None = None
         self.candidate_count = 0
 
-    def update(self, detections: sv.Detections):
+    def update(self, detections: sv.Detections) -> int | None:
+        """Return the tracked detection index, if one is confirmed."""
         if len(detections) == 0:
             self.missed_frames += 1
             return None
@@ -95,7 +99,7 @@ class BallTracker:
             return self._confirm_recovery(
                 detections,
                 centers,
-                best_idx,
+                int(best_idx),
             )
 
         self.missed_frames += 1
@@ -110,9 +114,10 @@ class BallTracker:
 
     def _initialize(
         self,
-        detections,
-        centers,
-    ):
+        detections: sv.Detections,
+        centers: np.ndarray,
+    ) -> int | None:
+        """Initialize the track after two nearby detections."""
         best_idx = np.argmax(
             detections.confidence
         )
@@ -150,10 +155,11 @@ class BallTracker:
 
     def _confirm_recovery(
         self,
-        detections,
-        centers,
-        best_idx,
-    ):
+        detections: sv.Detections,
+        centers: np.ndarray,
+        best_idx: int,
+    ) -> int | None:
+        """Confirm a nearby candidate after missed frames."""
         candidate = centers[best_idx]
 
         if self.candidate_position is None:
@@ -189,9 +195,10 @@ class BallTracker:
 
     def _global_reacquire(
         self,
-        detections,
-        centers,
-    ):
+        detections: sv.Detections,
+        centers: np.ndarray,
+    ) -> int | None:
+        """Find a confident candidate when the motion gate fails."""
         valid_indices = np.where(
             detections.confidence
             >= self.reacquire_confidence
@@ -274,8 +281,9 @@ class BallTracker:
 
     def _update_position(
         self,
-        new_position,
-    ):
+        new_position: np.ndarray,
+    ) -> None:
+        """Update the position and smoothed velocity."""
         frame_gap = self.missed_frames + 1
 
         measured_velocity = (
@@ -296,6 +304,7 @@ class BallTracker:
 
         self.missed_frames = 0
 
-    def _reset_candidate(self):
+    def _reset_candidate(self) -> None:
+        """Clear the pending recovery candidate."""
         self.candidate_position = None
         self.candidate_count = 0

@@ -5,12 +5,15 @@ import numpy as np
 import supervision as sv
 from PIL import Image
 
+from .models import BallModel
+
 
 def get_tile_positions(
     length: int,
     tile_size: int,
     overlap: float,
 ) -> list[int]:
+    """Return tile start positions that cover the full dimension."""
     if length <= tile_size:
         return [0]
 
@@ -27,12 +30,13 @@ def get_tile_positions(
 
 def tiled_predict(
     frame: np.ndarray,
-    model,
+    model: BallModel,
     tile_size: int,
     overlap: float,
     threshold: float,
     nms_threshold: float,
 ) -> sv.Detections:
+    """Detect objects in overlapping tiles and suppress duplicate boxes."""
     height, width = frame.shape[:2]
 
     x_positions = get_tile_positions(width, tile_size, overlap)
@@ -89,6 +93,7 @@ def filter_pitch_detections(
     min_green_ratio: float,
     context_scale: float,
 ) -> sv.Detections:
+    """Keep detections whose surrounding image area is mostly green."""
     if len(detections) == 0:
         return detections
 

@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import warnings
 import logging
+from collections.abc import Sequence
 
 os.environ["CORE_MODEL_GAZE_ENABLED"] = "False"
 os.environ["CORE_MODEL_SAM_ENABLED"] = "False"
@@ -21,6 +22,7 @@ logging.getLogger("bitsandbytes").setLevel(logging.ERROR)
 
 
 def output_stem(value: str) -> str:
+    """Validate and normalize an output video file name."""
     name = Path(value).name
     if name != value or "\\" in value or name in {"", ".", ".."}:
         raise argparse.ArgumentTypeError("output name must be a file name, not a path")
@@ -31,7 +33,8 @@ def output_stem(value: str) -> str:
     return name
 
 
-def main(argv=None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
+    """Parse arguments and run the video tracking pipeline."""
     parser = argparse.ArgumentParser(description="Track a football and draw its pitch position.")
     parser.add_argument("video", type=Path, help="path to an input MP4 video")
     parser.add_argument(

@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 import supervision as sv
 
+from .models import FieldModel
+
 
 PITCH_WIDTH = 120.0
 
@@ -51,11 +53,12 @@ PITCH_VERTICES = np.array(
 
 
 def estimate_homography(
-    frame,
-    field_model,
-    confidence_threshold=0.5,
-    ransac_threshold=0.75,
-):
+    frame: np.ndarray,
+    field_model: FieldModel,
+    confidence_threshold: float = 0.5,
+    ransac_threshold: float = 0.75,
+) -> tuple[np.ndarray | None, int]:
+    """Estimate an image-to-pitch transform from field keypoints."""
     result = field_model.infer(
         frame,
         confidence=0.3,
@@ -108,10 +111,11 @@ def estimate_homography(
 
 
 def image_to_pitch(
-    x,
-    y,
-    homography,
-):
+    x: float,
+    y: float,
+    homography: np.ndarray,
+) -> tuple[float, float]:
+    """Project an image point onto the pitch in metres."""
     point = np.array(
         [[[x, y]]],
         dtype=np.float32,
@@ -126,10 +130,11 @@ def image_to_pitch(
 
 
 def is_valid_pitch_position(
-    x,
-    y,
-    margin=5.0,
-):
+    x: float,
+    y: float,
+    margin: float = 5.0,
+) -> bool:
+    """Check whether a point falls within the pitch margin."""
     return (
         -margin <= x <= PITCH_WIDTH + margin
         and -margin <= y <= PITCH_HEIGHT + margin
@@ -137,9 +142,10 @@ def is_valid_pitch_position(
 
 
 def create_pitch_map(
-    width=360,
-    height=210,
-):
+    width: int = 360,
+    height: int = 210,
+) -> np.ndarray:
+    """Draw a top-down pitch map as a BGR image."""
     pitch = np.zeros(
         (height, width, 3),
         dtype=np.uint8,
@@ -280,11 +286,12 @@ def create_pitch_map(
 
 
 def pitch_position_to_map(
-    pitch_x,
-    pitch_y,
-    map_width,
-    map_height,
-):
+    pitch_x: float,
+    pitch_y: float,
+    map_width: int,
+    map_height: int,
+) -> tuple[int, int]:
+    """Convert pitch coordinates to pixel coordinates on the map."""
     margin = 8
 
     usable_width = map_width - 2 * margin
@@ -314,14 +321,15 @@ def pitch_position_to_map(
 
 
 def add_pitch_overlay(
-    frame,
-    pitch_x=None,
-    pitch_y=None,
-    map_width=360,
-    map_height=210,
-    margin=20,
-    opacity=0.85,
-):
+    frame: np.ndarray,
+    pitch_x: float | None = None,
+    pitch_y: float | None = None,
+    map_width: int = 360,
+    map_height: int = 210,
+    margin: int = 20,
+    opacity: float = 0.85,
+) -> np.ndarray:
+    """Blend a pitch map and optional ball marker into a frame."""
     frame_height, frame_width = frame.shape[:2]
 
     max_width = frame_width - 2 * margin

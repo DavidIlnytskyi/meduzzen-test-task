@@ -2,6 +2,12 @@
 
 import os
 import logging
+from collections.abc import Sequence
+from typing import Any, Protocol
+
+import numpy as np
+import supervision as sv
+from PIL import Image
 
 
 FIELD_DETECTION_MODEL_ID = "football-field-detection-f07vi/14"
@@ -9,7 +15,24 @@ BALL_MODEL_REPO = "julianzu9612/RFDETR-Soccernet"
 BALL_MODEL_WEIGHTS = "weights/checkpoint_best_regular.pth"
 
 
-def load_models():
+class BallModel(Protocol):
+    """Describe the ball detector interface used by the pipeline."""
+
+    def predict(self, image: Image.Image, threshold: float) -> sv.Detections:
+        """Return ball detections for an image tile."""
+        ...
+
+
+class FieldModel(Protocol):
+    """Describe the field detector interface used for calibration."""
+
+    def infer(self, frame: np.ndarray, confidence: float) -> Sequence[Any]:
+        """Return field keypoint inference results for a frame."""
+        ...
+
+
+def load_models() -> tuple[BallModel, FieldModel]:
+    """Load the ball and field detectors from their remote weights."""
     api_key = os.environ.get("ROBOFLOW_API_KEY")
     if not api_key:
         raise ValueError("Set ROBOFLOW_API_KEY before running the video pipeline.")
